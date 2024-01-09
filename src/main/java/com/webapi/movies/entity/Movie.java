@@ -1,4 +1,4 @@
-package com.webapi.movies.model;
+package com.webapi.movies.entity;
 
 import jakarta.persistence.*;
 

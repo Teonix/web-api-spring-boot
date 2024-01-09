@@ -1,10 +1,10 @@
 package com.webapi.movies.controller;
 
 import com.webapi.movies.dto.MovieDto;
-import com.webapi.movies.service.infc.IMovieService;
+import com.webapi.movies.dto.MoviePaged;
+import com.webapi.movies.service.IMovieService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +15,13 @@ import java.util.List;
 public class MovieController {
     @Autowired
     private IMovieService iMovieService;
+
+    @GetMapping("/movies/paged")
+    public ResponseEntity<MoviePaged> getAllMoviesPaged(
+            @RequestParam(value = "pageNumber", defaultValue = "0", required = false) int pageNumber,
+            @RequestParam(value = "pageSize", defaultValue = "5", required = false) int pageSize){
+        return iMovieService.getAllMoviesPaged(pageNumber, pageSize);
+    }
 
     @GetMapping("/movies")
     public ResponseEntity<List<MovieDto>> getAllMovies(){
@@ -37,7 +44,7 @@ public class MovieController {
     }
 
     @DeleteMapping("/movies/{id}")
-    public ResponseEntity<List<MovieDto>> deleteMovieById(@PathVariable("id") Long movieId){
+    public ResponseEntity<HttpStatus> deleteMovieById(@PathVariable("id") Long movieId){
         return iMovieService.deleteMovieById(movieId);
     }
 

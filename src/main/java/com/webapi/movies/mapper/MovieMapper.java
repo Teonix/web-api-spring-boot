@@ -1,7 +1,7 @@
 package com.webapi.movies.mapper;
 
 import com.webapi.movies.dto.MovieDto;
-import com.webapi.movies.model.Movie;
+import com.webapi.movies.entity.Movie;
 
 public class MovieMapper {
     public static MovieDto mapToMovieDto(Movie movie){

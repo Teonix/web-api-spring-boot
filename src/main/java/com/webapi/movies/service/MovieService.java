@@ -1,15 +1,18 @@
 package com.webapi.movies.service;
 
 import com.webapi.movies.dto.MovieDto;
+import com.webapi.movies.dto.MoviePaged;
+import com.webapi.movies.exception.MovieNotFoundException;
 import com.webapi.movies.mapper.MovieMapper;
-import com.webapi.movies.model.Movie;
-import com.webapi.movies.service.infc.IMovieService;
+import com.webapi.movies.entity.Movie;
 import com.webapi.movies.repository.MovieRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,9 +23,31 @@ public class MovieService implements IMovieService {
     private MovieRepository movieRepository;
 
     @Override
+    public ResponseEntity<MoviePaged> getAllMoviesPaged(int pageNumber, int pageSize) {
+
+        Pageable pageable = PageRequest.of(pageNumber, pageSize);
+        Page<Movie> page = movieRepository.findAll(pageable);
+
+        List<MovieDto> movieDtoList = new ArrayList<>();
+
+        page.getContent().forEach((movie) -> movieDtoList.add(MovieMapper.mapToMovieDto(movie)));
+
+        MoviePaged moviePaged = new MoviePaged();
+
+        moviePaged.setContent(movieDtoList);
+        moviePaged.setPageNumber(page.getNumber());
+        moviePaged.setPageSize(page.getSize());
+        moviePaged.setTotalElements(page.getTotalElements());
+        moviePaged.setTotalPages(page.getTotalPages());
+        moviePaged.setLast(page.isLast());
+
+        return new ResponseEntity<>(moviePaged, HttpStatus.OK);
+    }
+
+    @Override
     public ResponseEntity<List<MovieDto>> getAllMovies() {
-        List<Movie> movies = new ArrayList<Movie>();
-        List<MovieDto> moviesDto = new ArrayList<MovieDto>();
+        List<Movie> movies = new ArrayList<>();
+        List<MovieDto> moviesDto = new ArrayList<>();
 
         movieRepository.findAll().forEach(movies::add);
 
@@ -43,14 +68,20 @@ public class MovieService implements IMovieService {
         if(movie.isPresent()){
             return new ResponseEntity<>(MovieMapper.mapToMovieDto(movie.get()), HttpStatus.OK);
         } else{
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            throw new MovieNotFoundException("Movie with id: " + movieId + " not found.");
         }
     }
 
     @Override
     public ResponseEntity<MovieDto> createMovie(MovieDto movieDto) {
         Movie movie = MovieMapper.mapToMovie(movieDto);
-        Movie savedMovie = movieRepository.save(movie);
+
+        Movie movie1 = new Movie();
+        movie1.setTitle(movie.getTitle());
+        movie1.setYear(movie.getYear());
+        movie1.setRating(movie.getRating());
+
+        Movie savedMovie = movieRepository.save(movie1);
 
         return new ResponseEntity<>(MovieMapper.mapToMovieDto(savedMovie), HttpStatus.CREATED);
     }
@@ -66,19 +97,19 @@ public class MovieService implements IMovieService {
             Movie updatedMovie = movieRepository.save(movie.get());
             return new ResponseEntity<>(MovieMapper.mapToMovieDto(updatedMovie), HttpStatus.OK);
         } else{
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            throw new MovieNotFoundException("Movie with id: " + movieId + " not found.");
         }
     }
 
     @Override
-    public ResponseEntity<List<MovieDto>> deleteMovieById(Long movieId) {
+    public ResponseEntity<HttpStatus> deleteMovieById(Long movieId) {
         Optional<Movie> movie = movieRepository.findById(movieId);
 
         if(movie.isPresent()){
             movieRepository.deleteById(movieId);
-            return getAllMovies();
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } else{
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            throw new MovieNotFoundException("Movie with id: " + movieId + " not found.");
         }
     }
 
